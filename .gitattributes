@@ -1,2 +1,16 @@
-*.csv filter=lfs diff=lfs merge=lfs -text
-*.npy filter=lfs diff=lfs merge=lfs -text
+# Track large non-essential data with LFS
+data/all_venue/*.csv filter=lfs diff=lfs merge=lfs -text
+data/all_venue/*.npy filter=lfs diff=lfs merge=lfs -text
+data/new_run_data/*.csv filter=lfs diff=lfs merge=lfs -text
+data/new_run_data/*.npy filter=lfs diff=lfs merge=lfs -text
+data/processed/papers_clean.csv filter=lfs diff=lfs merge=lfs -text
+data/processed/papers_with_citations.csv filter=lfs diff=lfs merge=lfs -text
+data/processed/papers_filtered.csv filter=lfs diff=lfs merge=lfs -text
+data/processed/papers_filtered1.csv filter=lfs diff=lfs merge=lfs -text
+data/processed/papers_filtered2.csv filter=lfs diff=lfs merge=lfs -text
+data/processed/cluster_labels.npy filter=lfs diff=lfs merge=lfs -text
+
+# These files are needed at runtime in Docker — keep as regular git objects
+# data/processed/papers_clustered.csv (~94MB)
+# data/processed/embedding_ids.csv (~1MB)
+# data/reduced_embeddings.npy (~2MB)
