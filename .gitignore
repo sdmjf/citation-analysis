@@ -13,8 +13,8 @@ venv/
 # Environment variables
 .env
 
-# Large binary files
-*.npy
+# Large binary files (tracked via Git LFS)
+# *.npy
 
 # Database
 *.db
