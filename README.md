@@ -2,6 +2,8 @@
 
 A full-stack application for analyzing and visualizing citation trends in LLM research papers across NLP venues(from ACL authology) .
 
+For trying, you can use the link: https://citation-analysis.onrender.com to access the web
+
 ## Features
 
 - **Cluster Visualization** — Papers grouped by research topic using embedding-based clustering
