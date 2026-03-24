@@ -102,20 +102,8 @@ def search_papers(
 
 @router.get("/venues")
 def list_venues():
-    papers = load_papers_index()
-    venue_map: dict[str, set[int]] = {}
-    for paper in papers:
-        venue = paper.get("venue")
-        year = paper.get("year")
-        if not venue or year is None:
-            continue
-        venue_map.setdefault(str(venue), set()).add(int(year))
-
-    venues = [
-        {"venue": venue, "years": sorted(years)}
-        for venue, years in sorted(venue_map.items(), key=lambda item: item[0])
-    ]
-    return {"venues": venues}
+    from backend.data_store import load_precomputed
+    return load_precomputed("venues")
 
 
 @router.get("/by-venue")

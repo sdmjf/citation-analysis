@@ -4,8 +4,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import pandas as pd
-from scipy.sparse import hstack
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
@@ -45,6 +43,11 @@ def cluster_lookup() -> dict[int, dict[str, Any]]:
 
 
 @lru_cache(maxsize=1)
+def load_precomputed(name: str) -> Any:
+    return _load_json(STATIC_DIR / f"{name}_precomputed.json")
+
+
+@lru_cache(maxsize=1)
 def paper_lookup() -> dict[str, dict[str, Any]]:
     return {paper["paper_id"]: paper for paper in load_papers_index()}
 
@@ -67,28 +70,21 @@ def load_embedding_ids() -> list[str]:
 
 @lru_cache(maxsize=1)
 def load_full_papers() -> list[dict[str, Any]]:
-    path = DATA_DIR / "processed" / "papers_clustered.csv"
-    usecols = ["paper_id", "title", "abstract", "venue", "year", "citation_count", "cluster_id"]
-    df = pd.read_csv(path, usecols=lambda c: c in usecols)
-    # Convert to records and free the dataframe
-    records = df.to_dict(orient="records")
-    del df
-    return records
+    """Load papers from papers_index.json (lightweight, no abstract)."""
+    return load_papers_index()
 
 
 @lru_cache(maxsize=1)
 def load_text_search_assets():
-    papers = load_full_papers()
-    full_texts = []
+    papers = load_papers_index()
     title_texts = []
     for paper in papers:
         title = str(paper.get("title", ""))
-        title_texts.append(title)
-        full_texts.append(" ".join([title, str(paper.get("abstract", "")), str(paper.get("venue", ""))]))
-    word_vectorizer = TfidfVectorizer(stop_words="english", max_features=8000, ngram_range=(1, 1))
-    char_vectorizer = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 4), min_df=3, max_features=5000)
-    word_matrix = word_vectorizer.fit_transform(full_texts).tocsr()
-    del full_texts
+        venue = str(paper.get("venue", ""))
+        title_texts.append(f"{title} {venue}")
+    word_vectorizer = TfidfVectorizer(stop_words="english", max_features=6000, ngram_range=(1, 1))
+    char_vectorizer = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 4), min_df=3, max_features=4000)
+    word_matrix = word_vectorizer.fit_transform(title_texts).tocsr()
     title_char_matrix = char_vectorizer.fit_transform(title_texts).tocsr()
     del title_texts
     return papers, word_vectorizer, char_vectorizer, word_matrix, title_char_matrix

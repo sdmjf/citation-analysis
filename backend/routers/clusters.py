@@ -2,8 +2,7 @@ from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
-from backend.data_store import cluster_lookup, load_cluster_papers
-from backend.trend_logic import cluster_scope_summary, filter_papers
+from backend.data_store import cluster_lookup, load_cluster_papers, load_precomputed
 
 
 router = APIRouter(prefix="/api/clusters", tags=["clusters"])
@@ -16,7 +15,13 @@ def list_clusters(
     sort: Literal["trend", "citations", "papers", "name"] = "trend",
     limit: int = Query(default=60, ge=1, le=500),
 ):
-    clusters = [cluster for cluster in cluster_scope_summary(filter_papers()) if cluster.get("enabled", True)]
+    # Use precomputed data for default requests (no filters)
+    if not q and not trend_label and sort == "trend":
+        data = load_precomputed("clusters")
+        return {"clusters": data["clusters"][:limit], "total": data["total"]}
+
+    # Fallback to precomputed data with client-side filtering
+    clusters = load_precomputed("clusters")["clusters"]
 
     if trend_label:
         clusters = [cluster for cluster in clusters if cluster.get("trend_label") == trend_label]
