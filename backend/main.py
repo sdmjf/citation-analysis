@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from backend.data_store import load_clusters, load_text_search_assets
+from backend.data_store import load_clusters
 from backend.routers import clusters, papers, recommendations, trends
 
 
@@ -29,11 +29,6 @@ app.include_router(recommendations.router)
 
 app.mount("/assets", StaticFiles(directory=FRONTEND_DIR), name="frontend-assets")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "backend" / "static"), name="data-static")
-
-
-@app.on_event("startup")
-def warm_search_assets():
-    load_text_search_assets()
 
 
 @app.get("/api/health")

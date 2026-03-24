@@ -68,8 +68,12 @@ def load_embedding_ids() -> list[str]:
 @lru_cache(maxsize=1)
 def load_full_papers() -> list[dict[str, Any]]:
     path = DATA_DIR / "processed" / "papers_clustered.csv"
-    df = pd.read_csv(path)
-    return df.to_dict(orient="records")
+    usecols = ["paper_id", "title", "abstract", "venue", "year", "citation_count", "cluster_id"]
+    df = pd.read_csv(path, usecols=lambda c: c in usecols)
+    # Convert to records and free the dataframe
+    records = df.to_dict(orient="records")
+    del df
+    return records
 
 
 @lru_cache(maxsize=1)
@@ -81,8 +85,10 @@ def load_text_search_assets():
         title = str(paper.get("title", ""))
         title_texts.append(title)
         full_texts.append(" ".join([title, str(paper.get("abstract", "")), str(paper.get("venue", ""))]))
-    word_vectorizer = TfidfVectorizer(stop_words="english", max_features=12000, ngram_range=(1, 2))
-    char_vectorizer = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), min_df=2, max_features=8000)
+    word_vectorizer = TfidfVectorizer(stop_words="english", max_features=8000, ngram_range=(1, 1))
+    char_vectorizer = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 4), min_df=3, max_features=5000)
     word_matrix = word_vectorizer.fit_transform(full_texts).tocsr()
+    del full_texts
     title_char_matrix = char_vectorizer.fit_transform(title_texts).tocsr()
+    del title_texts
     return papers, word_vectorizer, char_vectorizer, word_matrix, title_char_matrix
