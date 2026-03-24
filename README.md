@@ -1,6 +1,6 @@
 # LLM Research Trend Visualizer
 
-A full-stack application for analyzing and visualizing citation trends in LLM research papers across top AI venues (NeurIPS, ICML, ICLR, CVPR, ACL, etc.).
+A full-stack application for analyzing and visualizing citation trends in LLM research papers across NLP venues(from ACL authology) .
 
 ## Features
 
