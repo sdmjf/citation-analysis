@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LLM Research Trend Visualizer</title>
+    <link rel="stylesheet" href="/assets/styles.css?v=20260321b" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <main class="layout">
+        <section class="panel filters-panel">
+          <div id="discoveryCard" class="tool-card discovery-card">
+            <div class="panel-header">
+              <h2>Paper Discovery</h2>
+              <p>Search papers with natural language using cosine similarity plus keyword matching.</p>
+            </div>
+            <div class="filters compact-filters">
+              <label>
+                <span>Describe What You Want</span>
+                <input id="paperSearchInput" type="search" placeholder="e.g. papers about retrieval with low hallucination in LLMs" />
+              </label>
+              <button id="paperSearchBtn" class="venue-button" type="button">Search Papers</button>
+            </div>
+
+            <div class="panel-header small-gap">
+              <h2>Paper Name Search</h2>
+              <p>Search a specific paper title or paper id, then inspect similar papers from the result cards.</p>
+            </div>
+            <div class="filters compact-filters">
+              <label>
+                <span>Paper Name</span>
+                <input id="paperNameSearchInput" type="search" placeholder="e.g. REPLUG or 2024.naacl-long.463" />
+              </label>
+              <button id="paperNameSearchBtn" class="venue-button" type="button">Search By Name</button>
+            </div>
+          </div>
+
+          <div id="venueCard" class="tool-card venue-card">
+            <div class="panel-header">
+              <h2>Venue Browser</h2>
+              <p>Click once to select. Click again to deselect. You can combine multiple conferences, then narrow by publication year.</p>
+            </div>
+            <div class="venue-browser">
+              <div id="venueButtons" class="venue-buttons"></div>
+              <div class="filters compact-filters">
+                <label id="venueSearchWrap" class="hidden">
+                  <span>Search Conference</span>
+                  <input id="venueSearchInput" type="search" placeholder="e.g. Findings, TACL, COLING" />
+                </label>
+              </div>
+              <div id="moreVenueButtons" class="venue-buttons hidden"></div>
+              <label>
+                <span>Published Year</span>
+                <select id="venueYearFilter">
+                  <option value="">All years</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="tool-card direction-search-card">
+            <div class="panel-header">
+              <h2>Search Directions</h2>
+              <p>Filter domains under the current venue scope.</p>
+            </div>
+            <div class="direction-browser-toolbar sidebar-direction-toolbar">
+              <label>
+                <span>Search Directions</span>
+                <input id="searchInput" type="search" placeholder="e.g. retrieval, translation, alignment, multimodal llm" />
+              </label>
+              <label>
+                <span>Trend</span>
+                <select id="trendFilter">
+                  <option value="">All</option>
+                  <option value="hot">Hot</option>
+                  <option value="rising">Rising</option>
+                  <option value="stable">Stable</option>
+                  <option value="declining">Declining</option>
+                </select>
+              </label>
+              <label>
+                <span>Sort</span>
+                <select id="sortFilter">
+                  <option value="trend">Trend score</option>
+                  <option value="citations">Total citations</option>
+                  <option value="papers">Paper count</option>
+                  <option value="name">Name</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+        </section>
+
+        <section class="panel detail-panel">
+          <div class="direction-overview">
+            <div class="card rising-card likely-card">
+              <div class="card-header">
+                <h3>My Likely Research Directions</h3>
+                <p id="likelySubtitle">No personal directions yet. Like papers or directions first.</p>
+              </div>
+              <div id="likelyList" class="rising-list"></div>
+            </div>
+
+            <div class="card recommendation-card">
+              <div class="card-header">
+                <h3>Recommendations From Likes</h3>
+                <p>Saved here so personal signals stay next to your likely directions.</p>
+              </div>
+              <div class="liked-toolbar">
+                <button id="likedPanelToggleBtn" class="like-btn" type="button">Show Likes</button>
+                <button id="clearLikesBtn" class="like-btn" type="button">Clear All Likes</button>
+              </div>
+              <div id="recommendationList" class="paper-list compact-paper-list"></div>
+            </div>
+
+            <div class="card rising-card rising-overview-card">
+              <div class="card-header">
+                <h3>Domain Browser</h3>
+                <p>Browse domains under the current venue scope, ranked by score.</p>
+              </div>
+              <div id="clusterList" class="cluster-grid embedded-cluster-grid"></div>
+              <div class="cluster-more-wrap">
+                <button id="clusterMoreBtn" class="venue-button hidden" type="button">More</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="emptyState" class="empty-state">
+            <p class="eyebrow">Select A Cluster</p>
+            <h2>Choose a topic from the left to inspect its trajectory.</h2>
+            <p>
+              You will see the trend curve, top venues, and representative papers for that cluster.
+            </p>
+          </div>
+
+          <div id="clusterDetail" class="cluster-detail hidden">
+            <div class="detail-top">
+              <div>
+                <p id="detailTrendBadge" class="trend-pill"></p>
+                <h2 id="detailName"></h2>
+                <p id="detailDescription" class="detail-description"></p>
+              </div>
+              <div class="detail-stat-grid" id="detailStats"></div>
+            </div>
+
+            <div class="detail-body">
+            <div class="card">
+                <div class="card-header">
+                  <h3>Trend Timeline</h3>
+                  <p>Share of yearly papers in this domain</p>
+                </div>
+                <div id="timelineChart" class="timeline-chart"></div>
+                <div id="timelineTooltip" class="timeline-tooltip hidden" aria-hidden="true"></div>
+              </div>
+
+              <div class="card split-card">
+                <div>
+                  <div class="card-header">
+                    <h3>Top Venues</h3>
+                    <p>Where this cluster most often appears</p>
+                  </div>
+                  <div id="venueList" class="venue-list"></div>
+                </div>
+                <div>
+                  <div class="card-header">
+                    <h3>Trend Reading</h3>
+                    <p>Friendlier interpretation of momentum</p>
+                  </div>
+                  <ul id="signalList" class="signal-list"></ul>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <h3 id="papersPanelTitle">Papers In This Domain</h3>
+                  <p id="papersPanelSubtitle">Sorted from high citation to low citation</p>
+                </div>
+                <div id="paperList" class="paper-list"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="paperModal" class="modal hidden" aria-hidden="true">
+      <div id="modalBackdrop" class="modal-backdrop"></div>
+      <section class="modal-panel">
+        <div class="card-header">
+          <div>
+            <h3 id="modalTitle">Paper Results</h3>
+            <p id="modalSubtitle">Search results</p>
+          </div>
+          <button id="modalCloseBtn" class="like-btn" type="button">Close</button>
+        </div>
+        <div class="modal-refine">
+          <input id="modalRefineInput" type="search" placeholder="Refine results inside this modal" />
+          <select id="modalSortSelect" aria-label="Sort search results">
+            <option value="score">Best match</option>
+            <option value="year">Newest first</option>
+            <option value="citations">Most cited</option>
+          </select>
+        </div>
+        <div id="modalPaperList" class="paper-list modal-paper-list"></div>
+        <div class="modal-actions">
+          <button id="modalMoreBtn" class="venue-button hidden" type="button">Load More</button>
+        </div>
+      </section>
+    </div>
+
+    <aside id="likedSidePanel" class="liked-side-panel" aria-hidden="true">
+      <div class="liked-side-header">
+        <div>
+          <h3>Liked Signals</h3>
+          <p>Liked papers and directions used for recommendation.</p>
+        </div>
+        <button id="likedPanelCloseBtn" class="like-btn" type="button">Close</button>
+      </div>
+      <div id="likedPapers" class="liked-papers liked-side-content"></div>
+    </aside>
+
+    <script src="/assets/app.js?v=20260321b" defer></script>
+  </body>
+</html>
