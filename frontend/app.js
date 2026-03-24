@@ -269,6 +269,7 @@ function renderClusterList() {
       state.activeClusterId = Number(item.dataset.clusterId);
       renderClusterList();
       renderClusterDetail();
+      els.clusterDetail.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
   els.clusterList.querySelectorAll("[data-cluster-like]").forEach((button) => {
@@ -317,6 +318,7 @@ function renderDirectionCards(target, clusters) {
       state.activeClusterId = Number(item.dataset.clusterId);
       renderClusterList();
       renderClusterDetail();
+      els.clusterDetail.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
   target.querySelectorAll("[data-cluster-like]").forEach((button) => {

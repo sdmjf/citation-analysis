@@ -4,7 +4,7 @@ import numpy as np
 from fastapi import APIRouter, Query
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
-from backend.data_store import cluster_lookup, load_papers_index, load_text_search_assets
+from backend.data_store import cluster_lookup, get_abstract, load_papers_index, load_text_search_assets
 
 
 router = APIRouter(prefix="/api/papers", tags=["papers"])
@@ -244,8 +244,14 @@ def discover_papers(
         results.sort(key=lambda item: (item["year"] or 0, item["search_score"], item["citation_count"]), reverse=True)
     else:
         results.sort(key=lambda item: (item["search_score"], item["citation_count"], item["year"] or 0), reverse=True)
+    # Enrich top results with abstracts from cluster files
+    page = results[offset: offset + limit]
+    for record in page:
+        if not record.get("abstract"):
+            record["abstract"] = get_abstract(record["paper_id"], record["cluster_id"])
+
     return {
-        "papers": results[offset: offset + limit],
+        "papers": page,
         "total": len(results),
         "query": q,
         "offset": offset,

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scipy.sparse import load_npz
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
@@ -75,16 +76,43 @@ def load_full_papers() -> list[dict[str, Any]]:
 
 
 @lru_cache(maxsize=1)
+def _load_search_vocab(name: str) -> dict[str, Any]:
+    with (STATIC_DIR / "search" / f"{name}_vocab.json").open() as f:
+        return json.load(f)
+
+
+@lru_cache(maxsize=1)
 def load_text_search_assets():
+    """Load pre-computed TF-IDF matrices (built with abstracts) from disk."""
+    search_dir = STATIC_DIR / "search"
     papers = load_papers_index()
-    title_texts = []
-    for paper in papers:
-        title = str(paper.get("title", ""))
-        venue = str(paper.get("venue", ""))
-        title_texts.append(f"{title} {venue}")
-    word_vectorizer = TfidfVectorizer(stop_words="english", max_features=6000, ngram_range=(1, 1))
-    char_vectorizer = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 4), min_df=3, max_features=4000)
-    word_matrix = word_vectorizer.fit_transform(title_texts).tocsr()
-    title_char_matrix = char_vectorizer.fit_transform(title_texts).tocsr()
-    del title_texts
-    return papers, word_vectorizer, char_vectorizer, word_matrix, title_char_matrix
+
+    word_matrix = load_npz(search_dir / "word_matrix.npz").tocsr()
+    char_matrix = load_npz(search_dir / "char_matrix.npz").tocsr()
+
+    # Reconstruct vectorizers from saved vocabularies
+    word_data = _load_search_vocab("word")
+    word_vectorizer = TfidfVectorizer(stop_words="english", max_features=8000, ngram_range=(1, 2))
+    word_vectorizer.vocabulary_ = word_data["vocabulary"]
+    word_vectorizer.idf_ = np.array(word_data["idf"])
+    word_vectorizer._tfidf._idf_diag = __import__("scipy").sparse.diags(word_vectorizer.idf_)
+
+    char_data = _load_search_vocab("char")
+    char_vectorizer = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), min_df=2, max_features=5000)
+    char_vectorizer.vocabulary_ = char_data["vocabulary"]
+    char_vectorizer.idf_ = np.array(char_data["idf"])
+    char_vectorizer._tfidf._idf_diag = __import__("scipy").sparse.diags(char_vectorizer.idf_)
+
+    return papers, word_vectorizer, char_vectorizer, word_matrix, char_matrix
+
+
+def get_abstract(paper_id: str, cluster_id: int) -> str:
+    """Fetch abstract for a single paper from its cluster file."""
+    try:
+        papers = load_cluster_papers(cluster_id)
+        for p in papers:
+            if p.get("paper_id") == paper_id:
+                return p.get("abstract", "")
+    except Exception:
+        pass
+    return ""
