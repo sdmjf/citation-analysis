@@ -13,8 +13,7 @@ venv/
 # Environment variables
 .env
 
-# Data (too large for git, regenerate via pipeline)
-data/
+# Large binary files
 *.npy
 
 # Database
